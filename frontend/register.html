@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Đăng ký — TECHNOVA</title>
+<link rel="icon" href="/favicon.svg">
+<link rel="stylesheet" href="/css/auth.css">
+</head>
+<body>
+<div class="auth-page">
+  <a class="brand" href="/">TECHNOVA</a>
+  <main class="auth-card">
+    <div class="auth-head">
+      <span class="eyebrow">TECHNOVA ACCOUNT</span>
+      <h1>Tạo tài khoản</h1>
+      <p>Đăng ký tài khoản để mua sắm nhanh hơn và theo dõi đơn hàng.</p>
+    </div>
+    <form id="registerForm">
+      <label for="fullname">Họ và tên</label>
+      <input id="fullname" type="text" autocomplete="name" placeholder="Nguyễn Văn A" required>
+      <label for="email">Email</label>
+      <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+      <label for="password">Mật khẩu</label>
+      <input id="password" type="password" autocomplete="new-password" minlength="6" placeholder="Ít nhất 6 ký tự" required>
+      <label for="confirmPassword">Nhập lại mật khẩu</label>
+      <input id="confirmPassword" type="password" autocomplete="new-password" placeholder="Nhập lại mật khẩu" required>
+      <div id="error" class="error" hidden></div>
+      <button id="submit" class="primary" type="submit">Đăng ký</button>
+    </form>
+    <div class="switch">Đã có tài khoản? <a href="/login.html">Đăng nhập</a></div>
+    <a class="back" href="/">← Quay lại cửa hàng</a>
+  </main>
+</div>
+<script src="/js/auth.js" defer></script>
+</body>
+</html>

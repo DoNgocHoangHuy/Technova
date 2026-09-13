@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="500" viewBox="0 0 700 500">
+  <rect width="700" height="500" fill="#eef1f5"/>
+  <g fill="none" stroke="#9aa4b2" stroke-width="8">
+    <rect x="205" y="130" width="290" height="210" rx="18"/>
+    <path d="M240 300l65-65 55 55 45-45 55 55"/>
+    <circle cx="315" cy="200" r="25"/>
+  </g>
+  <text x="350" y="395" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" fill="#596579">TECHNOVA</text>
+</svg>
