@@ -1,33 +1,29 @@
-name: TECHNOVA CI/CD Pipeline
+name: CI/CD
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
   pull_request:
-    branches: [ main, master ]
-  workflow_dispatch:
+    branches:
+      - main
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: false
+env:
+  NODE_VERSION: 20
 
 jobs:
-  lint-and-validate:
-    name: Lint & Validate Frontend Data
+  ci:
+    name: Lint and check
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout source code
         uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: ${{ env.NODE_VERSION }}
 
       - name: Validate data.json format
         run: |
@@ -38,34 +34,26 @@ jobs:
               console.error('Invalid data.json schema!');
               process.exit(1);
             }
-            console.log('✓ data.json validation passed successfully!');
+            console.log('✓ data.json validation passed!');
           "
 
       - name: Syntax check JavaScript files
         run: |
           node -c frontend/js/mockApi.js frontend/js/app.js frontend/js/auth.js frontend/js/admin.js
-          echo "✓ JavaScript syntax check passed successfully!"
+          echo "✓ JavaScript syntax check passed!"
 
   deploy:
-    name: Deploy to GitHub Pages
-    needs: lint-and-validate
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    name: Deploy to Render
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload Artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './frontend'
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Trigger Render Deploy Hook
+        run: |
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            curl -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+            echo "✓ Triggered Render deployment successfully!"
+          else
+            echo "⚠️ Secret RENDER_DEPLOY_HOOK_URL is not configured on GitHub. Skipping trigger."
+          fi
