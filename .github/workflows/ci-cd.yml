@@ -1,0 +1,71 @@
+name: TECHNOVA CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  lint-and-validate:
+    name: Lint & Validate Frontend Data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate data.json format
+        run: |
+          node -e "
+            const fs = require('fs');
+            const data = JSON.parse(fs.readFileSync('frontend/data.json', 'utf8'));
+            if (!data.users || !data.categories || !data.products || !data.orders) {
+              console.error('Invalid data.json schema!');
+              process.exit(1);
+            }
+            console.log('✓ data.json validation passed successfully!');
+          "
+
+      - name: Syntax check JavaScript files
+        run: |
+          node -c frontend/js/mockApi.js frontend/js/app.js frontend/js/auth.js frontend/js/admin.js
+          echo "✓ JavaScript syntax check passed successfully!"
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: lint-and-validate
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './frontend'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
