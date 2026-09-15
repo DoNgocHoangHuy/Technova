@@ -1,0 +1,35 @@
+# Implementation Plan - Mock Data & Password Hashing
+
+Loại bỏ các lượt call backend API (fetch), chuyển sang sử dụng mock data được lưu trữ trong `data.json` kết hợp với `localStorage`, đồng thời mã hóa (hash) mật khẩu của các tài khoản Admin và User bằng SHA-256.
+
+## Proposed Changes
+
+### [Component: Mock Data & Hashing]
+- Create `frontend/data.json`:
+  - Default JSON dataset containing `users`, `categories`, `products`, and `orders`.
+  - Admin account (`admin@technova.com`) & User account (`user@technova.com`) with passwords hashed via SHA-256.
+- Create `frontend/js/mockApi.js`:
+  - Provides a SHA-256 hashing helper using Web Crypto (`crypto.subtle.digest`).
+  - Initializes `localStorage` with data from `data.json` on first launch.
+  - Overrides / provides the global [api(path, options)](file:///e:/technova/frontend/js/app.js#10-20) function to intercept authentication (`/auth/login`, `/auth/register`, `/auth/me`, `/auth/logout`), products, categories, orders, and dashboard stats.
+  - Hashes passwords during register and login validation.
+
+### [Component: Frontend Refactoring]
+- Modify [frontend/js/app.js](file:///e:/technova/frontend/js/app.js): Remove `fetch('/api/...')` logic, rely on `mockApi.js`.
+- Modify [frontend/js/auth.js](file:///e:/technova/frontend/js/auth.js): Remove `fetch('/api/...')` logic, rely on `mockApi.js`.
+- Modify [frontend/js/admin.js](file:///e:/technova/frontend/js/admin.js): Remove `fetch('/api/...')` logic, rely on `mockApi.js`.
+- Modify [frontend/index.html](file:///e:/technova/frontend/index.html), [login.html](file:///e:/technova/frontend/login.html), [register.html](file:///e:/technova/frontend/register.html), [admin.html](file:///e:/technova/frontend/admin.html): Include `<script src="/js/mockApi.js"></script>` before page scripts.
+
+## Verification Plan
+
+### Manual Verification
+1. Test User Login:
+   - Login as `user@technova.com` with password `user123`.
+   - Verify hashed password check.
+2. Test User Registration:
+   - Register new user, check that password is saved as SHA-256 hash.
+3. Store Browsing & Cart:
+   - Filter categories, search products, add to cart, and checkout.
+4. Test Admin Portal:
+   - Access [/admin.html](file:///e:/technova/frontend/admin.html) and login as `admin@technova.com` with password `admin123`.
+   - Verify dashboard stats, product add/edit/delete, customer lock/unlock, and order status changes.

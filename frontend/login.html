@@ -1,34 +1,38 @@
 <!doctype html>
 <html lang="vi">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Đăng nhập — TECHNOVA</title>
-<link rel="icon" href="/favicon.svg">
-<link rel="stylesheet" href="/css/auth.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Đăng nhập — TECHNOVA</title>
+  <link rel="icon" href="/favicon.svg">
+  <link rel="stylesheet" href="/css/auth.css">
 </head>
+
 <body>
-<div class="auth-page">
-  <a class="brand" href="/">TECHNOVA</a>
-  <main class="auth-card">
-    <div class="auth-head">
-      <span class="eyebrow">TECHNOVA ACCOUNT</span>
-      <h1>Đăng nhập</h1>
-      <p>Đăng nhập để thanh toán, xem đơn hàng và quản lý tài khoản.</p>
-    </div>
-    <form id="loginForm">
-      <label for="email">Email</label>
-      <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
-      <label for="password">Mật khẩu</label>
-      <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
-      <div id="success" class="success" hidden></div>
-      <div id="error" class="error" hidden></div>
-      <button id="submit" class="primary" type="submit">Đăng nhập</button>
-    </form>
-    <div class="switch">Chưa có tài khoản? <a href="/register.html">Đăng ký ngay</a></div>
-    <a class="back" href="/">← Quay lại cửa hàng</a>
-  </main>
-</div>
-<script src="/js/auth.js" defer></script>
+  <div class="auth-page">
+    <a class="brand" href="/">TECHNOVA</a>
+    <main class="auth-card">
+      <div class="auth-head">
+        <span class="eyebrow">TECHNOVA ACCOUNT</span>
+        <h1>Đăng nhập</h1>
+        <p>Đăng nhập để thanh toán, xem đơn hàng và quản lý tài khoản.</p>
+      </div>
+      <form id="loginForm">
+        <label for="email">Email</label>
+        <input id="email" type="email" autocomplete="email" placeholder="you@example.com" required>
+        <label for="password">Mật khẩu</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••" required>
+        <div id="success" class="success" hidden></div>
+        <div id="error" class="error" hidden></div>
+        <button id="submit" class="primary" type="submit">Đăng nhập</button>
+      </form>
+      <div class="switch">Chưa có tài khoản? <a href="/register.html">Đăng ký ngay</a></div>
+      <a class="back" href="/">← Quay lại cửa hàng</a>
+    </main>
+  </div>
+  <script src="/js/mockApi.js" defer></script>
+  <script src="/js/auth.js" defer></script>
 </body>
+
 </html>

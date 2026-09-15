@@ -1,4 +1,3 @@
-const API = '/api';
 let products = [];
 let categories = [];
 let cart = JSON.parse(localStorage.getItem('technovaCart') || '[]');
@@ -7,19 +6,9 @@ let user = null;
 const $ = id => document.getElementById(id);
 const money = n => '$' + Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
 
-async function api(path, opt = {}) {
-  const r = await fetch(API + path, {
-    credentials: 'include',
-    ...opt,
-    headers: { 'Content-Type': 'application/json', ...(opt.headers || {}) }
-  });
-  const j = await r.json().catch(() => ({}));
-  if (!r.ok) throw Error(j.message || 'Request failed');
-  return j;
-}
 
 function escapeHtml(s) {
-  return String(s ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c]));
+  return String(s ?? '').replace(/[&<>'"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[c]));
 }
 
 function saveCart() {
@@ -180,7 +169,7 @@ function closeModal(id) {
 }
 
 async function logout() {
-  await api('/auth/logout', { method: 'POST' }).catch(() => {});
+  await api('/auth/logout', { method: 'POST' }).catch(() => { });
   user = null;
 }
 
