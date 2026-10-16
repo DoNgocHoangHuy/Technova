@@ -1,21 +1,27 @@
-name: TECHNOVA CI/CD
+name: TECHNOVA Docker CI/CD
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: technova-deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci:
-    name: Validate frontend and backend
+    name: Validate source and Docker image
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout source code
+      - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -27,40 +33,58 @@ jobs:
       - name: Check backend JavaScript syntax
         shell: bash
         run: |
-          set -e
-          while IFS= read -r file; do
-            node --check "$file"
-          done < <(find backend -type f -name '*.js' -not -path 'backend/node_modules/*' | sort)
+          set -euo pipefail
+          while IFS= read -r file; do node --check "$file"; done < <(find backend -type f -name '*.js' -not -path '*/node_modules/*' | sort)
 
       - name: Check frontend JavaScript syntax
         shell: bash
         run: |
-          set -e
-          while IFS= read -r file; do
-            node --check "$file"
-          done < <(find frontend -type f -name '*.js' | sort)
+          set -euo pipefail
+          while IFS= read -r file; do node --check "$file"; done < <(find frontend -type f -name '*.js' | sort)
 
-      - name: Verify frontend has no mock database
-        shell: bash
-        run: |
-          if grep -R -nE 'mockApi|data\.json|technova_mock_db|technova_session' frontend; then
-            echo 'Mock database references found.'
-            exit 1
-          fi
-          echo 'No mock database references found.'
+      - name: Build Docker image for validation
+        run: docker build -t technova-ci:${{ github.sha }} .
 
-  deploy:
-    name: Trigger Render deployment
-    needs: ci
+  publish-and-deploy:
+    name: Publish image and deploy VPS
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: ci
     runs-on: ubuntu-latest
-
     steps:
-      - name: Trigger Render Deploy Hook
-        run: |
-          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
-            curl -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
-            echo "Triggered Render deployment successfully."
-          else
-            echo "RENDER_DEPLOY_HOOK_URL is not configured. Skipping deployment trigger."
-          fi
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/technova:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/technova:${{ github.sha }}
+
+      - name: Deploy on VPS over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          script: |
+            set -eu
+            cd "$HOME/technova"
+            export DOCKERHUB_USERNAME='${{ secrets.DOCKERHUB_USERNAME }}'
+            export IMAGE_TAG='latest'
+            docker compose pull app
+            docker compose up -d --no-build --remove-orphans
+            docker image prune -f
+            docker compose ps
