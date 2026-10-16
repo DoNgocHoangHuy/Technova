@@ -1,0 +1,90 @@
+name: TECHNOVA Docker CI/CD
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: technova-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Validate source and Docker image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Check backend JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do node --check "$file"; done < <(find backend -type f -name '*.js' -not -path '*/node_modules/*' | sort)
+
+      - name: Check frontend JavaScript syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r file; do node --check "$file"; done < <(find frontend -type f -name '*.js' | sort)
+
+      - name: Build Docker image for validation
+        run: docker build -t technova-ci:${{ github.sha }} .
+
+  publish-and-deploy:
+    name: Publish image and deploy VPS
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/technova:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/technova:${{ github.sha }}
+
+      - name: Deploy on VPS over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          script: |
+            set -eu
+            cd "$HOME/technova"
+            export DOCKERHUB_USERNAME='${{ secrets.DOCKERHUB_USERNAME }}'
+            export IMAGE_TAG='latest'
+            docker compose pull app
+            docker compose up -d --no-build --remove-orphans
+            docker image prune -f
+            docker compose ps

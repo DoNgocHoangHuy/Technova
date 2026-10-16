@@ -45,7 +45,7 @@ Open:
 - Storefront: `http://localhost:5000/`
 - Admin: `http://localhost:5000/admin`
 - Admin HTML: `http://localhost:5000/admin`
-- API health: `http://localhost:5000/api/health`
+- API health: `http://localhost:5000/health`
 - API: `http://localhost:5000/api`
 
 In development, the server also attempts to open `http://localhost:5000` automatically after startup.
@@ -88,3 +88,8 @@ The application remains logically separated into frontend, backend, and database
 - Customer và admin dùng chung một trang đăng nhập: `http://localhost:5000/login`.
 - Sau khi đăng nhập, customer vào storefront; admin được chuyển tự động tới `/admin`.
 - Không có trang đăng nhập admin riêng.
+
+
+## Docker / VPS / CI-CD
+
+See [`DEPLOY-GUIDE-VI.md`](DEPLOY-GUIDE-VI.md) for the Docker Compose + VPS + GitHub Actions deployment path.
