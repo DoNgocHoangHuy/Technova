@@ -1,0 +1,66 @@
+name: TECHNOVA CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  ci:
+    name: Validate frontend and backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Check backend JavaScript syntax
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r file; do
+            node --check "$file"
+          done < <(find backend -type f -name '*.js' -not -path 'backend/node_modules/*' | sort)
+
+      - name: Check frontend JavaScript syntax
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r file; do
+            node --check "$file"
+          done < <(find frontend -type f -name '*.js' | sort)
+
+      - name: Verify frontend has no mock database
+        shell: bash
+        run: |
+          if grep -R -nE 'mockApi|data\.json|technova_mock_db|technova_session' frontend; then
+            echo 'Mock database references found.'
+            exit 1
+          fi
+          echo 'No mock database references found.'
+
+  deploy:
+    name: Trigger Render deployment
+    needs: ci
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Trigger Render Deploy Hook
+        run: |
+          if [ -n "${{ secrets.RENDER_DEPLOY_HOOK_URL }}" ]; then
+            curl -s -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"
+            echo "Triggered Render deployment successfully."
+          else
+            echo "RENDER_DEPLOY_HOOK_URL is not configured. Skipping deployment trigger."
+          fi
